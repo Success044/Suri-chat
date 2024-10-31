@@ -17,10 +17,12 @@ const page = async () => {
   //to display email of that ids.
   const incomingFriendRequests = await Promise.all(
     incomingSenderIds.map(async (senderId) => {
-      const sender = (await fetchRedis("get", `user:${senderId}`)) as User;
+      //data coming from the db is object so . instead of using as User below. use as string and parse it in next line
+      const sender = (await fetchRedis("get", `user:${senderId}`)) as string;
+      const senderParsed = JSON.parse(sender) as User;
       return {
         senderId,
-        senderEmail: sender.email,
+        senderEmail: senderParsed.email,
       };
     })
   );
