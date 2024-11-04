@@ -50,7 +50,7 @@ const page: FC<PageProps> = async ({ params }) => {
   const [userId1, userId2] = chatId.split("--");
   if (user.id !== userId1 && user.id !== userId2) notFound();
 
-  const chatPartnerId = user.id === userId1 ? userId2 : userId2;
+  const chatPartnerId = user.id === userId1 ? userId2 : userId1;
   const chatPartner = (await db.get(`user:${chatPartnerId}`)) as User;
   const initialMessages = await getChatMessages(chatId);
   return (
@@ -62,8 +62,8 @@ const page: FC<PageProps> = async ({ params }) => {
               <Image
                 fill
                 referrerPolicy="no-referrer"
-                src={chatPartner.image as string}
-                alt={`${chatPartner.name}Profile picture`}
+                src={chatPartner?.image}
+                alt={`${chatPartner?.name}Profile picture`}
                 className="rounded-full"
               />
             </div>
@@ -71,10 +71,10 @@ const page: FC<PageProps> = async ({ params }) => {
           <div className="flex flex-col leading-tight">
             <div className="text-xl flex items-center">
               <span className="text-gray-700 mr-3 font-semibold">
-                {chatPartner.name}
+                {chatPartner?.name}
               </span>
             </div>
-            <span className="text-sm text-gray-600">{chatPartner.email}</span>
+            <span className="text-sm text-gray-600">{chatPartner?.email}</span>
           </div>
         </div>
       </div>
@@ -83,6 +83,7 @@ const page: FC<PageProps> = async ({ params }) => {
         sessionId={session.user.id}
         sessionImg={session.user.image}
         chatPartner={chatPartner}
+        chatId={chatId}
       />
       <ChatInput chatPartner={chatPartner} chatId={chatId} />
     </div>

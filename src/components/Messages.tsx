@@ -1,13 +1,15 @@
 "use client";
-import { cn } from "@/lib/utils";
+import { pusherClient } from "@/lib/pusher";
+import { cn, toPusherKey } from "@/lib/utils";
 import { Message } from "@/lib/validations/message";
 import { format } from "date-fns";
 import Image from "next/image";
-import { FC, useRef, useState } from "react";
+import { FC, useEffect, useRef, useState } from "react";
 
 interface MessagesProps {
   initialMessages: Message[];
   sessionId: string;
+  chatId: string;
   sessionImg: string | null | undefined;
   chatPartner: User;
 }
@@ -15,14 +17,35 @@ interface MessagesProps {
 const Messages: FC<MessagesProps> = ({
   initialMessages,
   sessionId,
+  chatId,
   sessionImg,
   chatPartner,
 }) => {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const scrollDownRef = useRef<HTMLDivElement | null>(null);
   const formatTimestamp = (timestamp: number) => {
-    return format(timestamp, "HH:mm");
+    return format(timestamp, "HH:mm:ss");
   };
+
+  useEffect(() => {
+    //pusher client to subscribe server provides this user. incoming friend request
+    //listening to client
+    pusherClient.subscribe(toPusherKey(`chat:${chatId}`));
+    const messageHandler = (message: Message) => {
+      setMessages((prev) => [message, ...prev]);
+      // return format(new Date(timestamp), "HH:mm:ss");
+    };
+
+    //whenever incoming friend requests comes. trigger / bind with a function. friendReqeusthandler
+    pusherClient.bind("incoming-message", messageHandler);
+
+    return () => {
+      //cleanup function.
+      pusherClient.unsubscribe(toPusherKey(`chat:${chatId}`));
+      pusherClient.unbind("incoming-message", messageHandler);
+    };
+  }, []);
+
   //flex-col-reverse. will show message upsidedown
   return (
     <div
