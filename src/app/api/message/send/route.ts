@@ -34,6 +34,7 @@ export async function POST(req: Request) {
       "get",
       `user:${session.user.id}`
     )) as string;
+    //here sender is user for toast notification. when we aren't in chat
     const sender = JSON.parse(rawSender) as User;
 
     const timestamp = Date.now();
@@ -47,8 +48,18 @@ export async function POST(req: Request) {
     const message = messageValidator.parse(messageData);
 
     //notify all connected chat room clients
-    pusherServer.trigger(toPusherKey(`chat:${chatId}`), "incoming-message", {
-      message,
+    pusherServer.trigger(
+      toPusherKey(`chat:${chatId}`),
+      "incoming-message",
+      //message is passed as the argument and reciever end will accpet {Id,senderId,text,timestamp} . but if we put {message}, this will behaves as the message is wrapped inside another object as the value for the message property. {"message":{id,senderid,text,timestamp}}
+      message
+    );
+
+    //any unseen message will trigger with new event 'new_message'
+    pusherServer.trigger(toPusherKey(`user:${friendId}:chats`), "new_message", {
+      ...message,
+      senderImg: sender.image,
+      senderName: sender.name,
     });
 
     //all valid, send the message. zadd . add in sorted list
