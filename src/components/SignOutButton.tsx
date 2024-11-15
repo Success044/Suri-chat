@@ -6,7 +6,8 @@ import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 import { Loader2, LogOut } from "lucide-react";
 
-//Signoutbuttonprops class should have the properties of buttonhtmlattributes has
+//Signoutbuttonprops class should have the properties of buttonhtmlattributes has. here singoutbuttonprops dnt have any other properties so, the lint will identify this as no-empty-object-type
+// eslint-disable-next-line
 interface SignOutButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {}
 
 const SignOutButton: FC<SignOutButtonProps> = ({ ...props }) => {

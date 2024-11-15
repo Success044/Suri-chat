@@ -60,6 +60,9 @@ const SidebarChatList: FC<SidebarChatListProps> = ({ friends, sessionId }) => {
       pusherClient.unsubscribe(toPusherKey(`user:${sessionId}:chats`));
 
       pusherClient.unsubscribe(toPusherKey(`user:${sessionId}:friends`));
+      //memory leak if we unbind the chathandler and newFrienndhandler
+      pusherClient.unbind("new_message", chatHandler);
+      pusherClient.unbind("new_friend", newFriendHandler);
     };
   }, [pathname, sessionId, router]);
 
