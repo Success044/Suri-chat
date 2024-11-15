@@ -1,4 +1,6 @@
+// eslint-disable-next-line
 import type { Session, User } from "next-auth";
+// eslint-disable-next-line
 import type { JWT } from "next-auth/jwt";
 
 type UserId = string;
