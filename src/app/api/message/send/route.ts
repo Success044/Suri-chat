@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     const message = messageValidator.parse(messageData);
 
     //notify all connected chat room clients
-    pusherServer.trigger(
+    await pusherServer.trigger(
       toPusherKey(`chat:${chatId}`),
       "incoming-message",
       //message is passed as the argument and reciever end will accpet {Id,senderId,text,timestamp} . but if we put {message}, this will behaves as the message is wrapped inside another object as the value for the message property. {"message":{id,senderid,text,timestamp}}
@@ -56,11 +56,15 @@ export async function POST(req: Request) {
     );
 
     //any unseen message will trigger with new event 'new_message'
-    pusherServer.trigger(toPusherKey(`user:${friendId}:chats`), "new_message", {
-      ...message,
-      senderImg: sender.image,
-      senderName: sender.name,
-    });
+    await pusherServer.trigger(
+      toPusherKey(`user:${friendId}:chats`),
+      "new_message",
+      {
+        ...message,
+        senderImg: sender.image,
+        senderName: sender.name,
+      }
+    );
 
     //all valid, send the message. zadd . add in sorted list
     await db.zadd(`chat:${chatId}:messages`, {
