@@ -36,23 +36,51 @@ export async function POST(req: Request) {
       return new Response("No friend request", { status: 400 });
     }
 
-    //notify added friend if online when friend req sent
-    pusherServer.trigger(
-      toPusherKey(`user:${idToAdd}:friends`),
-      "new_friend",
-      {}
-    );
+    const [userRaw, friendRaw] = (await Promise.all([
+      fetchRedis("get", `user:${session.user.id}`),
+      fetchRedis("get", `user:${idToAdd}`),
+    ])) as [string, string];
 
-    //add to friend list
-    await db.sadd(`user:${session.user.id}:friends`, idToAdd);
+    const user = JSON.parse(userRaw) as User;
+    const friend = JSON.parse(friendRaw) as User;
 
-    //show add to requester friend
-    await db.sadd(`user:${idToAdd}:friends`, session.user.id);
+    //notify added friend if online when friend req sent . IMPROVE performance
+    await Promise.all([
+      pusherServer.trigger(
+        toPusherKey(`user:${idToAdd}:friends`),
+        "new_friend",
+        user
+      ),
+      pusherServer.trigger(
+        toPusherKey(`user:${session.user.id}:friends`),
+        "new_friend",
+        friend
+      ),
+      //add to friend list
+      db.sadd(`user:${session.user.id}:friends`, idToAdd),
+      //show add to requester friend
+      db.sadd(`user:${idToAdd}:friends`, session.user.id),
+      //clear friendrequests   //or outbound
+      db.srem(`user:${session.user.id}:incoming_friend_requests`, idToAdd),
+    ]);
 
-    //clear friendrequests   //or outbound
-    // await db.srem(`user:${idToAdd}:incoming_friend_requests`, session.user.id);
+    //doing this as the same time with user and friend.
+    // pusherServer.trigger(
+    //   toPusherKey(`user:${idToAdd}:friends`),
+    //   "new_friend",
+    //   {}
+    // );
 
-    await db.srem(`user:${session.user.id}:incoming_friend_requests`, idToAdd);
+    // //add to friend list
+    // await db.sadd(`user:${session.user.id}:friends`, idToAdd);
+
+    // //show add to requester friend
+    // await db.sadd(`user:${idToAdd}:friends`, session.user.id);
+
+    // //clear friendrequests   //or outbound
+    // // await db.srem(`user:${idToAdd}:incoming_friend_requests`, session.user.id);
+
+    // await db.srem(`user:${session.user.id}:incoming_friend_requests`, idToAdd);
 
     return new Response("ok");
   } catch (error) {

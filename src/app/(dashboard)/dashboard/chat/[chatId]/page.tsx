@@ -4,7 +4,6 @@ import ChatInput from "@/components/ChatInput";
 import Messages from "@/components/Messages";
 import { fetchRedis } from "@/helpers/redis";
 import { authOptions } from "@/lib/auth";
-import { db } from "@/lib/db";
 import { messageArrayValidator } from "@/lib/validations/message";
 import { getServerSession } from "next-auth";
 import Image from "next/image";
@@ -51,7 +50,14 @@ const page: FC<PageProps> = async ({ params }) => {
   if (user.id !== userId1 && user.id !== userId2) notFound();
 
   const chatPartnerId = user.id === userId1 ? userId2 : userId1;
-  const chatPartner = (await db.get(`user:${chatPartnerId}`)) as User;
+
+  //use the truseted fetchredis instead of db.get here
+  // const chatPartner=await db.get(`user:${chatPartnerId}`) as User;
+  const chatPartnerRaw = (await fetchRedis(
+    `get`,
+    `user:${chatPartnerId}`
+  )) as string;
+  const chatPartner = JSON.parse(chatPartnerRaw) as User;
   const initialMessages = await getChatMessages(chatId);
   return (
     <div className="flex-1 justify-between flex flex-col h-full max-h-[calc(100vh-6rem)] ">
